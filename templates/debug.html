@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Console Test</title>
+    <style>
+        body { font-family: monospace; background: #1e1e1e; color: #d4d4d4; padding: 20px; }
+        #output { background: #252526; padding: 10px; border-radius: 4px; max-height: 600px; overflow-y: auto; white-space: pre-wrap; word-wrap: break-word; }
+        .error { color: #f48771; }
+        .warning { color: #dcdcaa; }
+        .success { color: #6a9955; }
+        .info { color: #569cd6; }
+    </style>
+</head>
+<body>
+    <h2>Application Debug Console</h2>
+    <div id="output"></div>
+    
+    <script>
+        const output = document.getElementById('output');
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const line = `[${timestamp}] [${type.toUpperCase()}] ${message}`;
+            const span = document.createElement('div');
+            span.className = type;
+            span.textContent = line;
+            output.appendChild(span);
+            output.scrollTop = output.scrollHeight;
+        }
+        
+        // Capture errors
+        window.addEventListener('error', (e) => {
+            log(`JavaScript Error: ${e.message} at ${e.filename}:${e.lineno}`, 'error');
+        });
+        
+        // Test API connectivity
+        async function testAPI() {
+            try {
+                log('Testing API connectivity...', 'info');
+                const res = await fetch('http://127.0.0.1:5000/api/locations');
+                if (res.ok) {
+                    log(`✓ API /api/locations: ${res.status} OK`, 'success');
+                } else {
+                    log(`✗ API /api/locations: ${res.status}`, 'error');
+                }
+            } catch (e) {
+                log(`✗ API Error: ${e.message}`, 'error');
+            }
+        }
+        
+        // Load the actual app
+        async function testApp() {
+            try {
+                log('Loading main application...', 'info');
+                const res = await fetch('http://127.0.0.1:5000/');
+                if (res.ok) {
+                    log(`✓ Application loaded: ${res.status}`, 'success');
+                    const html = await res.text();
+                    
+                    // Check for key elements
+                    if (html.includes('module2-module')) {
+                        log('✓ Module 2 element found in HTML', 'success');
+                    } else {
+                        log('✗ Module 2 element NOT found', 'error');
+                    }
+                    
+                    if (html.includes('module3-module')) {
+                        log('✓ Module 3 element found in HTML', 'success');
+                    } else {
+                        log('✗ Module 3 element NOT found', 'error');
+                    }
+                    
+                    // Check for scripts
+                    if (html.includes('bellman-ford.js')) {
+                        log('✓ bellman-ford.js included', 'success');
+                    } else {
+                        log('✗ bellman-ford.js NOT included', 'error');
+                    }
+                    
+                    if (html.includes('dashboard.js')) {
+                        log('✓ dashboard.js included', 'success');
+                    } else {
+                        log('✗ dashboard.js NOT included', 'error');
+                    }
+                } else {
+                    log(`✗ Application error: ${res.status}`, 'error');
+                }
+            } catch (e) {
+                log(`✗ App Load Error: ${e.message}`, 'error');
+            }
+        }
+        
+        // Run tests
+        (async () => {
+            log('Starting application tests...', 'info');
+            await testAPI();
+            log('', 'info');
+            await testApp();
+            log('', 'info');
+            log('Tests completed. Open the actual app and check browser console for errors.', 'warning');
+        })();
+    </script>
+</body>
+</html>

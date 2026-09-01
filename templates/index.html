@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-Time Delivery Cost Calculator - Bellman-Ford Algorithm</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+    <!-- Chart.js -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.min.css">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div id="app">
+        <!-- Navbar -->
+        <nav class="navbar navbar-dark navbar-expand-lg sticky-top">
+            <div class="container-fluid">
+                <a class="navbar-brand fw-bold" href="/">
+                    <i class="fas fa-route"></i> Delivery Cost Calculator
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav ms-auto">
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" onclick="showModule('overview')">
+                                <i class="fas fa-home"></i> Overview
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" onclick="showModule('module1')">
+                                <i class="fas fa-network-wired"></i> Network
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" onclick="showModule('module2')">
+                                <i class="fas fa-calculator"></i> Algorithm
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" onclick="showModule('module3')">
+                                <i class="fas fa-chart-bar"></i> Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" onclick="initDemoData()">
+                                <i class="fas fa-database"></i> Demo
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <div class="main-container">
+            <!-- OVERVIEW MODULE -->
+            <div id="overview-module" class="module-view">
+                <div class="container-fluid py-5">
+                    <div class="row mb-4">
+                        <div class="col-lg-12">
+                            <h1 class="page-title">
+                                <i class="fas fa-home"></i> Overview
+                            </h1>
+                            <p class="lead text-muted">Real-Time Delivery Cost Calculator using Bellman-Ford Algorithm</p>
+                        </div>
+                    </div>
+
+                    <!-- Status Cards -->
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <div class="stat-card">
+                                <div class="stat-icon locations-icon">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                </div>
+                                <div class="stat-content">
+                                    <div class="stat-value" id="overview-locations">0</div>
+                                    <div class="stat-label">Locations</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-card">
+                                <div class="stat-icon routes-icon">
+                                    <i class="fas fa-arrows-alt-h"></i>
+                                </div>
+                                <div class="stat-content">
+                                    <div class="stat-value" id="overview-routes">0</div>
+                                    <div class="stat-label">Routes</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-card">
+                                <div class="stat-icon source-icon">
+                                    <i class="fas fa-circle"></i>
+                                </div>
+                                <div class="stat-content">
+                                    <div class="stat-value" id="overview-source">-</div>
+                                    <div class="stat-label">Source</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-card">
+                                <div class="stat-icon calc-icon">
+                                    <i class="fas fa-check-circle"></i>
+                                </div>
+                                <div class="stat-content">
+                                    <div class="stat-value" id="overview-calculations">0</div>
+                                    <div class="stat-label">Calculations</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Map Section -->
+                    <div class="row mb-4">
+                        <div class="col-lg-12">
+                            <div class="card">
+                                <div class="card-header bg-primary text-white">
+                                    <h5 class="mb-0"><i class="fas fa-map"></i> Live Delivery Network</h5>
+                                </div>
+                                <div class="card-body p-0">
+                                    <div id="overview-map" class="map-container" style="height: 600px;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="action-card">
+                                <div class="action-icon">
+                                    <i class="fas fa-plus-circle"></i>
+                                </div>
+                                <h5>Add Location</h5>
+                                <p>Create new delivery locations</p>
+                                <button class="btn btn-sm btn-primary" onclick="showModule('module1')">Go to Module 1</button>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="action-card">
+                                <div class="action-icon">
+                                    <i class="fas fa-link"></i>
+                                </div>
+                                <h5>Create Routes</h5>
+                                <p>Connect locations with delivery routes</p>
+                                <button class="btn btn-sm btn-primary" onclick="showModule('module1')">Go to Module 1</button>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="action-card">
+                                <div class="action-icon">
+                                    <i class="fas fa-play-circle"></i>
+                                </div>
+                                <h5>Run Algorithm</h5>
+                                <p>Execute Bellman-Ford calculation</p>
+                                <button class="btn btn-sm btn-primary" onclick="showModule('module2')">Go to Module 2</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MODULE 1: NETWORK MODELING -->
+            <div id="module1-module" class="module-view" style="display: none;">
+                <div class="container-fluid py-4">
+                    <div class="row mb-4">
+                        <div class="col-lg-12">
+                            <h1 class="page-title">
+                                <i class="fas fa-network-wired"></i> MODULE 1: DELIVERY NETWORK MODELING
+                            </h1>
+                            <p class="lead text-muted">Build and manage the weighted directed delivery graph</p>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <!-- LEFT COLUMN: INPUT CONTROLS -->
+                        <div class="col-lg-4">
+                            <!-- Card 1: Delivery Locations -->
+                            <div class="card mb-3 input-card">
+                                <div class="card-header bg-primary text-white">
+                                    <h5 class="mb-0"><i class="fas fa-map-pin"></i> DELIVERY LOCATIONS</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <input type="text" id="location-search" class="form-control" placeholder="Search location...">
+                                    </div>
+                                    <div class="mb-2">
+                                        <button class="btn btn-sm btn-primary w-100" onclick="searchLocation()">
+                                            <i class="fas fa-search"></i> Search Location
+                                        </button>
+                                    </div>
+                                    <div class="mb-2">
+                                        <button class="btn btn-sm btn-success w-100" onclick="getCurrentLocation()">
+                                            <i class="fas fa-location-dot"></i> Use Current Location
+                                        </button>
+                                    </div>
+                                    <div id="search-results" class="mb-3" style="max-height: 200px; overflow-y: auto;"></div>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label">Location Name</label>
+                                        <input type="text" id="location-name" class="form-control" placeholder="e.g., Warehouse">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Latitude</label>
+                                        <input type="number" id="location-lat" class="form-control" placeholder="13.1939" step="0.0001">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Longitude</label>
+                                        <input type="number" id="location-lon" class="form-control" placeholder="80.2740" step="0.0001">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Address</label>
+                                        <input type="text" id="location-address" class="form-control" placeholder="Full address">
+                                    </div>
+                                    <div class="d-grid gap-2">
+                                        <button class="btn btn-primary" onclick="addLocation()">
+                                            <i class="fas fa-plus"></i> Add Location
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Locations Table -->
+                            <div class="card mb-3">
+                                <div class="card-header bg-info text-white">
+                                    <h5 class="mb-0"><i class="fas fa-list"></i> Locations</h5>
+                                </div>
+                                <div class="card-body p-0">
+                                    <div class="table-responsive">
+                                        <table class="table table-sm table-hover mb-0">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th>Node</th>
+                                                    <th>Name</th>
+                                                    <th>Action</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="locations-table-body">
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Card 2: Delivery Routes -->
+                            <div class="card mb-3 input-card">
+                                <div class="card-header bg-primary text-white">
+                                    <h5 class="mb-0"><i class="fas fa-route"></i> DELIVERY ROUTES</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <label class="form-label">Source Location</label>
+                                        <select id="route-source" class="form-select"></select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Destination Location</label>
+                                        <select id="route-destination" class="form-select"></select>
+                                    </div>
+                                    <div class="mb-2">
+                                        <button class="btn btn-sm btn-info w-100" onclick="getRealRoute()">
+                                            <i class="fas fa-map-location"></i> Get Real Route
+                                        </button>
+                                    </div>
+                                    <div id="route-info" class="alert alert-info py-2 px-3 mb-3" style="display: none; font-size: 0.9em;">
+                                        <div><strong>Distance:</strong> <span id="route-distance">-</span> km</div>
+                                        <div><strong>Estimated Time:</strong> <span id="route-time">-</span> min</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Card 3: Edge Weights -->
+                            <div class="card mb-3 input-card">
+                                <div class="card-header bg-primary text-white">
+                                    <h5 class="mb-0"><i class="fas fa-weight"></i> EDGE WEIGHT / COST</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <label class="form-label">Cost Entry Mode</label>
+                                        <div class="btn-group w-100" role="group">
+                                            <input type="radio" class="btn-check" name="cost-mode" id="cost-mode-manual" value="manual" checked>
+                                            <label class="btn btn-outline-primary" for="cost-mode-manual">Manual</label>
+                                            <input type="radio" class="btn-check" name="cost-mode" id="cost-mode-auto" value="auto">
+                                            <label class="btn btn-outline-primary" for="cost-mode-auto">Auto Calculate</label>
+                                        </div>
+                                    </div>
+
+                                    <!-- Manual Mode -->
+                                    <div id="manual-cost-mode">
+                                        <div class="mb-3">
+                                            <label class="form-label">Delivery Cost (₹)</label>
+                                            <input type="number" id="route-cost-manual" class="form-control" placeholder="0" step="0.01">
+                                        </div>
+                                    </div>
+
+                                    <!-- Auto Mode -->
+                                    <div id="auto-cost-mode" style="display: none;">
+                                        <div class="mb-2">
+                                            <label class="form-label">Base Charge (₹)</label>
+                                            <input type="number" id="base-charge" class="form-control" value="50" step="1">
+                                        </div>
+                                        <div class="mb-2">
+                                            <label class="form-label">Cost/km (₹)</label>
+                                            <input type="number" id="cost-per-km" class="form-control" value="10" step="1">
+                                        </div>
+                                        <div class="mb-2">
+                                            <label class="form-label">Cost/min (₹)</label>
+                                            <input type="number" id="cost-per-min" class="form-control" value="2" step="1">
+                                        </div>
+                                        <div class="alert alert-info py-2 px-3 mb-3" style="font-size: 0.85em;">
+                                            <div><strong>Formula:</strong></div>
+                                            <div>Cost = Base + (Distance × Cost/km) + (Time × Cost/min)</div>
+                                            <div class="mt-2" id="cost-calculation-display">-</div>
+                                        </div>
+                                    </div>
+
+                                    <div class="d-grid gap-2">
+                                        <button class="btn btn-primary" onclick="addRoute()">
+                                            <i class="fas fa-plus"></i> Add Route
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Card 4: Source Location -->
+                            <div class="card mb-3 input-card">
+                                <div class="card-header bg-primary text-white">
+                                    <h5 class="mb-0"><i class="fas fa-circle"></i> SOURCE LOCATION</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <label class="form-label">Select Source for Algorithm</label>
+                                        <select id="source-location" class="form-select"></select>
+                                    </div>
+                                    <button class="btn btn-success w-100" onclick="passGraphToAlgorithm()">
+                                        <i class="fas fa-arrow-right"></i> Pass to Bellman-Ford
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- RIGHT COLUMN: VISUALIZATION -->
+                        <div class="col-lg-8">
+                            <!-- Map -->
+                            <div class="card mb-3">
+                                <div class="card-header bg-primary text-white">
+                                    <h5 class="mb-0"><i class="fas fa-map"></i> Network Map</h5>
+                                </div>
+                                <div class="card-body p-0">
+                                    <div id="module1-map" class="map-container" style="height: 500px;"></div>
+                                </div>
+                            </div>
+
+                            <!-- Edge List -->
+                            <div class="card mb-3">
+                                <div class="card-header bg-secondary text-white">
+                                    <h5 class="mb-0"><i class="fas fa-list"></i> EDGE LIST</h5>
+                                </div>
+                                <div class="card-body p-0">
+                                    <div class="table-responsive">
+                                        <table class="table table-sm table-hover mb-0">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th>Edge</th>
+                                                    <th>Cost (₹)</th>
+                                                    <th>Distance (km)</th>
+                                                    <th>Time (min)</th>
+                                                    <th>Action</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="edge-list-body">
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Adjacency List -->
+                            <div class="card mb-3">
+                                <div class="card-header bg-secondary text-white">
+                                    <h5 class="mb-0"><i class="fas fa-project-diagram"></i> ADJACENCY LIST</h5>
+                                </div>
+                                <div class="card-body">
+                                    <pre id="adjacency-list-display" class="mb-0" style="font-size: 0.85em; max-height: 300px; overflow-y: auto;"></pre>
+                                </div>
+                            </div>
+
+                            <!-- Graph Summary -->
+                            <div class="card">
+                                <div class="card-header bg-success text-white">
+                                    <h5 class="mb-0"><i class="fas fa-bar-chart"></i> GRAPH STRUCTURE</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row text-center">
+                                        <div class="col-md-4">
+                                            <div class="graph-stat">
+                                                <div class="stat-number" id="vertex-count">0</div>
+                                                <div class="stat-name">Vertices (V)</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="graph-stat">
+                                                <div class="stat-number" id="edge-count">0</div>
+                                                <div class="stat-name">Edges (E)</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="graph-stat">
+                                                <div class="stat-number" id="total-cost">₹0</div>
+                                                <div class="stat-name">Total Cost</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MODULE 2: BELLMAN-FORD CALCULATION ENGINE -->
+            <div id="module2-module" class="module-view" style="display: none;">
+                <div class="container-fluid py-4">
+                    <div class="row mb-4">
+                        <div class="col-lg-12">
+                            <h1 class="page-title">
+                                <i class="fas fa-calculator"></i> MODULE 2: BELLMAN-FORD COST CALCULATION ENGINE
+                            </h1>
+                            <p class="lead text-muted">Find minimum delivery cost from source to all destinations</p>
+                        </div>
+                    </div>
+
+                    <!-- Algorithm Explanation -->
+                    <div class="row mb-4">
+                        <div class="col-lg-12">
+                            <div class="card bg-light-info">
+                                <div class="card-body">
+                                    <h6 class="card-title"><i class="fas fa-book"></i> OBJECTIVE</h6>
+                                    <p class="mb-0">Find the minimum delivery cost from one source location to every reachable location using the Bellman-Ford algorithm. The algorithm relaxes all edges V-1 times, where V is the number of vertices.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <!-- LEFT COLUMN: Controls -->
+                        <div class="col-lg-3">
+                            <div class="card mb-3">
+                                <div class="card-header bg-primary text-white">
+                                    <h5 class="mb-0"><i class="fas fa-cog"></i> EXECUTION CONTROLS</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <label class="form-label">Graph Status</label>
+                                        <div class="alert alert-info py-2 px-3 mb-0" style="font-size: 0.9em;">
+                                            <div><strong>Vertices:</strong> <span id="algo-vertex-count">0</span></div>
+                                            <div><strong>Edges:</strong> <span id="algo-edge-count">0</span></div>
+                                            <div><strong>Source:</strong> <span id="algo-source-label">-</span></div>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Max Iterations</label>
+                                        <input type="number" id="max-iterations" class="form-control" readonly>
+                                    </div>
+
+                                    <div class="d-grid gap-2 mb-3">
+                                        <button class="btn btn-success btn-lg" onclick="runBellmanFord()">
+                                            <i class="fas fa-play"></i> RUN BELLMAN-FORD
+                                        </button>
+                                    </div>
+
+                                    <div class="d-grid gap-2">
+                                        <button class="btn btn-primary" onclick="resetCalculation()">
+                                            <i class="fas fa-redo"></i> Reset
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Status Panel -->
+                            <div class="card">
+                                <div class="card-header bg-info text-white">
+                                    <h5 class="mb-0"><i class="fas fa-info-circle"></i> Status</h5>
+                                </div>
+                                <div class="card-body p-0">
+                                    <div class="list-group list-group-flush">
+                                        <div class="list-group-item">
+                                            <small class="text-muted">Execution Time</small>
+                                            <div id="execution-time">-</div>
+                                        </div>
+                                        <div class="list-group-item">
+                                            <small class="text-muted">Iterations</small>
+                                            <div id="iterations-performed">-</div>
+                                        </div>
+                                        <div class="list-group-item">
+                                            <small class="text-muted">Relaxations</small>
+                                            <div id="relaxations-count">-</div>
+                                        </div>
+                                        <div class="list-group-item">
+                                            <small class="text-muted">Negative Cycle</small>
+                                            <div id="negative-cycle-status">No</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- CENTER COLUMN: Algorithm Display -->
+                        <div class="col-lg-6">
+                            <!-- Initialization -->
+                            <div class="card mb-3">
+                                <div class="card-header bg-secondary text-white">
+                                    <h5 class="mb-0"><i class="fas fa-arrow-right"></i> STEP 1: INITIALIZATION</h5>
+                                </div>
+                                <div class="card-body p-0">
+                                    <div class="table-responsive">
+                                        <table class="table table-sm table-hover mb-0">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th>Vertex</th>
+                                                    <th>Distance</th>
+                                                    <th>Predecessor</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="init-table-body">
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Relaxation Log -->
+                            <div class="card mb-3">
+                                <div class="card-header bg-secondary text-white d-flex justify-content-between">
+                                    <h5 class="mb-0"><i class="fas fa-sync"></i> EDGE RELAXATION PROCESS</h5>
+                                    <small id="relaxation-progress">-</small>
+                                </div>
+                                <div class="card-body p-0">
+                                    <div id="relaxation-log" class="relaxation-log">
+                                        <div class="text-center text-muted p-4">No calculation yet. Run algorithm to see relaxation steps.</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- RIGHT COLUMN: Results -->
+                        <div class="col-lg-3">
+                            <!-- Final Distances -->
+                            <div class="card mb-3">
+                                <div class="card-header bg-success text-white">
+                                    <h5 class="mb-0"><i class="fas fa-checkmark-circle"></i> FINAL DISTANCES</h5>
+                                </div>
+                                <div class="card-body p-0">
+                                    <div class="table-responsive">
+                                        <table class="table table-sm table-hover mb-0">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th>Dest</th>
+                                                    <th>Cost</th>
+                                                    <th>Status</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="final-distances-body">
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Best Path to Destination -->
+                            <div class="card mb-3">
+                                <div class="card-header bg-info text-white">
+                                    <h5 class="mb-0"><i class="fas fa-route"></i> BEST PATH</h5>
+                                </div>
+                                <div class="card-body">
+                                    <label class="form-label">Select Destination</label>
+                                    <select id="destination-select" class="form-select mb-3" onchange="showBestPath()"></select>
+
+                                    <div id="best-path-display">
+                                        <div class="text-center text-muted">-</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Negative Cycle Alert -->
+                            <div id="negative-cycle-alert" class="alert alert-danger" style="display: none;">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <strong>Negative Cycle Detected!</strong>
+                                <p class="mb-0 small">A reachable negative-weight cycle exists. Minimum cost for affected paths is not well-defined.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Detailed Relaxation Table -->
+                    <div class="row mt-4">
+                        <div class="col-lg-12">
+                            <div class="card">
+                                <div class="card-header bg-secondary text-white">
+                                    <h5 class="mb-0"><i class="fas fa-table"></i> DETAILED RELAXATION TABLE</h5>
+                                </div>
+                                <div class="card-body p-0">
+                                    <div class="table-responsive">
+                                        <table class="table table-sm table-hover mb-0">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th>Iter</th>
+                                                    <th>Edge</th>
+                                                    <th>Weight</th>
+                                                    <th>dist[u]</th>
+                                                    <th>Candidate</th>
+                                                    <th>Old dist[v]</th>
+                                                    <th>New dist[v]</th>
+                                                    <th>Updated</th>
+                                                    <th>Pred</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="detailed-table-body">
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Complexity Section -->
+                    <div class="row mt-4">
+                        <div class="col-lg-12">
+                            <div class="card">
+                                <div class="card-header bg-warning text-dark">
+                                    <h5 class="mb-0"><i class="fas fa-calculator"></i> ALGORITHM COMPLEXITY</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <h6>TIME COMPLEXITY</h6>
+                                            <div class="complexity-box">
+                                                <code class="complexity-text">O(VE)</code>
+                                                <p class="small mt-2">V-1 iterations × E edges per iteration</p>
+                                                <p class="small"><strong id="current-time-complexity">-</strong></p>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <h6>SPACE COMPLEXITY</h6>
+                                            <div class="complexity-box">
+                                                <code class="complexity-text">O(V)</code>
+                                                <p class="small mt-2">Distance array + Predecessor array</p>
+                                                <p class="small"><strong id="current-space-complexity">-</strong></p>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <h6>GRAPH STORAGE</h6>
+                                            <div class="complexity-box">
+                                                <code class="complexity-text">O(V+E)</code>
+                                                <p class="small mt-2">V vertices + E edges adjacency list</p>
+                                                <p class="small"><strong id="current-graph-complexity">-</strong></p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MODULE 3: COST ANALYSIS DASHBOARD -->
+            <div id="module3-module" class="module-view" style="display: none;">
+                <div class="container-fluid py-4">
+                    <div class="row mb-4">
+                        <div class="col-lg-12">
+                            <h1 class="page-title">
+                                <i class="fas fa-chart-bar"></i> MODULE 3: COST ANALYSIS DASHBOARD
+                            </h1>
+                            <p class="lead text-muted">Analyze and visualize minimum delivery costs and routes</p>
+                        </div>
+                    </div>
+
+                    <!-- Summary Cards -->
+                    <div class="row mb-4">
+                        <div class="col-md-2">
+                            <div class="stat-card">
+                                <div class="stat-value" id="dashboard-locations">0</div>
+                                <div class="stat-label">Total Locations</div>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="stat-card">
+                                <div class="stat-value" id="dashboard-routes">0</div>
+                                <div class="stat-label">Total Routes</div>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="stat-card">
+                                <div class="stat-value" id="dashboard-source">-</div>
+                                <div class="stat-label">Source</div>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="stat-card">
+                                <div class="stat-value" id="dashboard-reachable">0</div>
+                                <div class="stat-label">Reachable Dests</div>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="stat-card">
+                                <div class="stat-value" id="dashboard-unreachable">0</div>
+                                <div class="stat-label">Unreachable Dests</div>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="stat-card">
+                                <div class="stat-value" id="dashboard-avg-cost">₹0</div>
+                                <div class="stat-label">Avg Cost</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <!-- LEFT: Map and Charts -->
+                        <div class="col-lg-8">
+                            <!-- Map -->
+                            <div class="card mb-3">
+                                <div class="card-header bg-primary text-white">
+                                    <h5 class="mb-0"><i class="fas fa-map"></i> Delivery Network Map</h5>
+                                </div>
+                                <div class="card-body p-0">
+                                    <div id="module3-map" class="map-container" style="height: 500px;"></div>
+                                </div>
+                            </div>
+
+                            <!-- Charts -->
+                            <div class="row mb-3">
+                                <div class="col-lg-6">
+                                    <div class="card">
+                                        <div class="card-header bg-success text-white">
+                                            <h5 class="mb-0"><i class="fas fa-bar-chart"></i> Minimum Cost by Destination</h5>
+                                        </div>
+                                        <div class="card-body">
+                                            <canvas id="cost-chart"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-lg-6">
+                                    <div class="card">
+                                        <div class="card-header bg-info text-white">
+                                            <h5 class="mb-0"><i class="fas fa-pie-chart"></i> Cost Distribution</h5>
+                                        </div>
+                                        <div class="card-body">
+                                            <canvas id="distribution-chart"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- RIGHT: Statistics -->
+                        <div class="col-lg-4">
+                            <!-- Cost Summary -->
+                            <div class="card mb-3">
+                                <div class="card-header bg-success text-white">
+                                    <h5 class="mb-0"><i class="fas fa-coins"></i> Cost Summary</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="summary-item">
+                                        <span class="summary-label">Minimum Cost</span>
+                                        <span class="summary-value" id="dashboard-min-cost">₹0</span>
+                                    </div>
+                                    <div class="summary-item">
+                                        <span class="summary-label">Maximum Cost</span>
+                                        <span class="summary-value" id="dashboard-max-cost">₹0</span>
+                                    </div>
+                                    <div class="summary-item">
+                                        <span class="summary-label">Total Cost</span>
+                                        <span class="summary-value" id="dashboard-total-cost">₹0</span>
+                                    </div>
+                                    <div class="summary-item">
+                                        <span class="summary-label">Average Cost</span>
+                                        <span class="summary-value" id="dashboard-avg-cost-detail">₹0</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Cost Distribution Table -->
+                            <div class="card">
+                                <div class="card-header bg-info text-white">
+                                    <h5 class="mb-0"><i class="fas fa-list"></i> Distribution</h5>
+                                </div>
+                                <div class="card-body p-0">
+                                    <table class="table table-sm table-hover mb-0" id="distribution-table">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Range</th>
+                                                <th>Count</th>
+                                                <th>%</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="distribution-body">
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Best Routes Table -->
+                    <div class="row mt-4">
+                        <div class="col-lg-12">
+                            <div class="card">
+                                <div class="card-header bg-secondary text-white">
+                                    <h5 class="mb-0"><i class="fas fa-table"></i> BEST ROUTES TO ALL DESTINATIONS</h5>
+                                </div>
+                                <div class="card-body p-0">
+                                    <div class="table-responsive">
+                                        <table class="table table-sm table-hover mb-0">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th>Destination</th>
+                                                    <th>Best Route</th>
+                                                    <th>Min Cost</th>
+                                                    <th>Distance</th>
+                                                    <th>Time</th>
+                                                    <th>Status</th>
+                                                    <th>Action</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="best-routes-body">
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Leaflet JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.min.js"></script>
+    
+    <!-- Custom JS -->
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/map.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/locations.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/routes.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/bellman-ford.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+</body>
+</html>
